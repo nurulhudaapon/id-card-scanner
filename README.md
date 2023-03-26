@@ -1,4 +1,4 @@
-###  National ID Scanner (OCR)
+### IDetect - National ID Scanner (OCR)
 Currently the National ID card is used as the primary identification in Bangladesh, and in every place businesses are required to collect information of the National ID card from a photocopy of the card. Right now it's being done manually which is very time consuming and error prone. The goal of this project is to automate the process of collecting information from the National ID card.
 
 
