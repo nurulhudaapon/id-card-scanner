@@ -1,13 +1,11 @@
 plugins {
-    // Provide convenience executables for trying out the examples.
     id 'application'
     id 'com.google.protobuf' version '0.9.1'
-    // Generate IntelliJ IDEA's .idea & .iml project files
     id 'idea'
 }
 
 repositories {
-    maven { // The google mirror is less flaky than mavenCentral()
+    maven { 
         url "https://maven-central.storage-download.googleapis.com/maven2/" }
     mavenCentral()
     mavenLocal()
@@ -16,11 +14,6 @@ repositories {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-// IMPORTANT: You probably want the non-SNAPSHOT version of gRPC. Make sure you
-// are looking at a tagged version of the example and not "master"!
-
-// Feel free to delete the comment at the next line. It is just for safely
-// updating the version in our release process.
 def grpcVersion = '1.54.0' // CURRENT_GRPC_VERSION
 def protobufVersion = '3.21.7'
 def protocVersion = protobufVersion
@@ -28,10 +21,12 @@ def protocVersion = protobufVersion
 dependencies {
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
-    implementation 'net.sourceforge.tess4j:tess4j:5.7.0'
-    implementation 'net.sourceforge.lept4j:lept4j:1.18.0'
-    implementation 'com.google.zxing:core:3.5.1'
-    implementation 'com.google.zxing:javase:3.5.1'
+
+    // implementation 'net.sourceforge.tess4j:tess4j:5.7.0'
+    // implementation 'net.sourceforge.lept4j:lept4j:1.18.0'
+    // implementation 'com.google.zxing:core:3.5.1'
+    // implementation 'com.google.zxing:javase:3.5.1'
+    
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
 
     // examples/advanced need this for JsonFormat
@@ -66,22 +61,22 @@ sourceSets {
 
 startScripts.enabled = false
 
-task helloWorldServer(type: CreateStartScripts) {
+task idetectGrpcServer(type: CreateStartScripts) {
     mainClass = 'com.nurulhudaapon.idetect.IdetectServer'
-    applicationName = 'hello-world-server'
+    applicationName = 'idetect-grpc-server'
     outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
     classpath = startScripts.classpath
 }
 
-task helloWorldClient(type: CreateStartScripts) {
+task idetectGrpcClient(type: CreateStartScripts) {
     mainClass = 'com.nurulhudaapon.idetect.IdetectClient'
-    applicationName = 'hello-world-client'
+    applicationName = 'idetect-grpc-client'
     outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
     classpath = startScripts.classpath
 }
 
 applicationDistribution.into('bin') {
-    from(helloWorldServer)
-    from(helloWorldClient)
+    from(idetectGrpcServer)
+    from(idetectGrpcClient)
     fileMode = 0755
 }

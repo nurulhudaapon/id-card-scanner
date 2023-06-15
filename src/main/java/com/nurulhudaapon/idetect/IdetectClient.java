@@ -1,19 +1,3 @@
-/*
- * Copyright 2015 The gRPC Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.nurulhudaapon.idetect;
 
 import io.grpc.Channel;
@@ -21,80 +5,123 @@ import io.grpc.Grpc;
 import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
+
+import java.awt.FlowLayout;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- * A simple client that requests a greeting from the {@link IdetectServer}.
- */
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+
 public class IdetectClient {
   private static final Logger logger = Logger.getLogger(IdetectClient.class.getName());
 
-  private final GreeterGrpc.GreeterBlockingStub blockingStub;
+  private final ScannerGrpc.ScannerBlockingStub blockingStub;
 
   /** Construct client for accessing Idetect server using the existing channel. */
   public IdetectClient(Channel channel) {
-    // 'channel' here is a Channel, not a ManagedChannel, so it is not this code's responsibility to
-    // shut it down.
-
-    // Passing Channels to code makes code easier to test and makes it easier to reuse Channels.
-    blockingStub = GreeterGrpc.newBlockingStub(channel);
+    blockingStub = ScannerGrpc.newBlockingStub(channel);
   }
 
   /** Say hello to server. */
-  public void greet(String name) {
-    logger.info("Will try to greet " + name + " ...");
-    HelloRequest request = HelloRequest.newBuilder().setName(name).build();
-    HelloReply response;
+  public String scan(String message) {
+    ResultRequest request = ResultRequest.newBuilder().setMessage(message).build();
+    ResultReply response;
+
     try {
-      response = blockingStub.sayHello(request);
+      response = blockingStub.result(request);
     } catch (StatusRuntimeException e) {
       logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-      return;
+      return "Error";
     }
-    logger.info("Greeting: " + response.getMessage());
+
+    logger.info("Client -> Response: " + response.getMessage());
+
+    return response.getMessage();
+
   }
 
   /**
-   * Greet server. If provided, the first element of {@code args} is the name to use in the
-   * greeting. The second argument is the target server.
+   * Application Entry Point
+   * 
+   * @param args
+   * @throws Exception
    */
   public static void main(String[] args) throws Exception {
-    String user = "world";
-    // Access a service running on the local machine on port 50051
-    String target = "localhost:5051";
-    // Allow passing in the user and target strings as command line arguments
-    if (args.length > 0) {
-      if ("--help".equals(args[0])) {
-        System.err.println("Usage: [name [target]]");
-        System.err.println("");
-        System.err.println("  name    The name you wish to be greeted by. Defaults to " + user);
-        System.err.println("  target  The server to connect to. Defaults to " + target);
-        System.exit(1);
-      }
-      user = args[0];
-    }
-    if (args.length > 1) {
-      target = args[1];
-    }
 
-    // Create a communication channel to the server, known as a Channel. Channels are thread-safe
-    // and reusable. It is common to create channels at the beginning of your application and reuse
-    // them until the application shuts down.
-    //
-    // For the example we use plaintext insecure credentials to avoid needing TLS certificates. To
-    // use TLS, use TlsChannelCredentials instead.
-    ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create())
-        .build();
+    JFrame f = new JFrame();// creating instance of JFrame
+    f.setTitle("IDetect");
+
+    JButton b = new JButton("click");// creating instance of JButton
+    b.setBounds(130, 100, 100, 40);// x axis, y axis, width, height
+    f.add(b);// adding button in JFram
+    f.setSize(400, 500);// 400 width and 500 height
+    f.setLayout(null);// using no layout managers
+    f.setVisible(true);// making the frame visible
+
+    // Swing Textbox
+    ImageIcon icon = new ImageIcon("test.jpeg");
+    f.add(new JLabel(icon));
+    f.pack();
+
+    File file = new File("/Users/nurulhudaapon/Projects/nurulhudaapon/idetect/test.jpeg");
+
+    BufferedImage bufferedImage = ImageIO.read(file);
+
+    // convert image to base64 encoded string using built-in java library
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    ImageIO.write(bufferedImage, "jpeg", byteArrayOutputStream);
+    byte[] imageBytes = byteArrayOutputStream.toByteArray();
+
+    // String base64String =
+    // javax.xml.bind.DatatypeConverter.printBase64Binary(imageBytes);
+
+    // System.out.println(base64String);
+    // logger.info("Client -> Request: " + base64String);
+
+    ImageIcon imageIcon = new ImageIcon(bufferedImage);
+    JFrame jFrame = new JFrame();
+
+    jFrame.setLayout(new FlowLayout());
+
+    jFrame.setSize(500, 500);
+    JLabel jLabel = new JLabel();
+
+    jLabel.setIcon(imageIcon);
+    jFrame.add(jLabel);
+    jFrame.setVisible(true);
+
+    jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+    // Java Swing Image Container
+
+    String target = "localhost:5051";
+    ManagedChannel channel = Grpc.newChannelBuilder(target,
+        InsecureChannelCredentials.create()).build();
+
     try {
+
       IdetectClient client = new IdetectClient(channel);
-      client.greet(user);
+
+      while (true) {
+        String res = client.scan("Client -> Request Message");
+
+        b.setText(res);
+        jLabel.setText(res);
+
+      }
+
     } finally {
-      // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
-      // resources the channel should be shut down when it will no longer be used. If it may be used
-      // again leave it running.
+
       channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+
     }
   }
 }

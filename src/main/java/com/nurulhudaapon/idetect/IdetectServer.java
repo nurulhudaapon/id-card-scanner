@@ -1,22 +1,5 @@
-/*
- * Copyright 2015 The gRPC Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.nurulhudaapon.idetect;
 
-import net.sourceforge.tess4j.*;
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
@@ -24,41 +7,42 @@ import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import javax.imageio.ImageIO;
-import com.google.zxing.*;
-import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
-import com.google.zxing.common.HybridBinarizer;
-
-import java.awt.image.BufferedImage;
 import java.io.File;
 
-/**
- * Server that manages startup/shutdown of a {@code Greeter} server.
- */
 public class IdetectServer {
-  private static final Logger logger = Logger.getLogger(IdetectServer.class.getName());
 
+  private static final Logger logger = Logger.getLogger(IdetectServer.class.getName());
   private Server server;
 
   private void start() throws IOException {
     /* The port on which the server should run */
     int port = 5051;
+
     server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
-        .addService(new GreeterImpl())
+        .addService(new ScannerImpl())
         .build()
         .start();
+
     logger.info("Server started, listening on " + port);
     Runtime.getRuntime().addShutdownHook(new Thread() {
+
       @Override
       public void run() {
+
         // Use stderr here since the logger may have been reset by its JVM shutdown
         // hook.
         System.err.println("*** shutting down gRPC server since JVM is shutting down");
+
         try {
+
           IdetectServer.this.stop();
+
         } catch (InterruptedException e) {
+
           e.printStackTrace(System.err);
+
         }
+
         System.err.println("*** server shut down");
       }
     });
@@ -80,6 +64,8 @@ public class IdetectServer {
     }
   }
 
+  static String processedText = "Default";
+
   /**
    * Main launches the server from the command line.
    */
@@ -89,47 +75,42 @@ public class IdetectServer {
     server.blockUntilShutdown();
   }
 
-  public static String scan(String fileName) {
-    File imageFile = new File("samples/" + fileName);
-    ITesseract instance = new Tesseract(); // JNA Interface Mapping
-    ITesseract instance1 = new Tesseract1(); // JNA Direct Mapping
-    // instance.setDatapath("tessdata"); // path to tessdata directory
+  public static String processText(String text) {
 
     try {
-      String resultOcr = instance.doOCR(imageFile);
+      processedText = text;
+      return text;
 
-      if (resultOcr != null) {
-        return resultOcr;
-      }
-      System.out.println(resultOcr);
-      // Read barcode using zxing:core
-      BufferedImage bufferedImage = ImageIO.read(imageFile);
-      LuminanceSource source = new BufferedImageLuminanceSource(bufferedImage);
-      BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-      Result result = new MultiFormatReader().decode(bitmap);
-      System.out.println("Barcode text is " + result.getText());
-
-      return result.getText();
-    } catch (NotFoundException e) {
-      System.err.println(e.getStackTrace());
-    }
-    // catch (TesseractException e) {
-    // System.err.println(e.getMessage());
-    // }
-    catch (IOException e) {
-      System.err.println(e.getMessage());
     } catch (Exception e) {
+
       System.err.println(e);
+
     }
+
     return "Error";
   }
 
-  static class GreeterImpl extends GreeterGrpc.GreeterImplBase {
+  static class ScannerImpl extends ScannerGrpc.ScannerImplBase {
+    @Override
+    public void scan(ScannedRequest req, StreamObserver<ScannedReply> responseObserver) {
+
+      String processedText = processText(req.getText());
+      ScannedReply reply = ScannedReply.newBuilder().setMessage(processedText).build();
+
+      System.out.println("Received request: " + req.getText() + ", Scan Result: " + processedText);
+
+      responseObserver.onNext(reply);
+      responseObserver.onCompleted();
+    }
 
     @Override
-    public void sayHello(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
-      HelloReply reply = HelloReply.newBuilder().setMessage(scan(req.getName())).build();
-      System.out.println("Received request: " + req.getName() + ", Scan Result: " + scan(req.getName()));
+    public void result(ResultRequest req, StreamObserver<ResultReply> responseObserver) {
+
+      // String processedText = processText(req.getMessage());
+      ResultReply reply = ResultReply.newBuilder().setMessage(IdetectServer.processedText).build();
+
+      System.out.println("Received request: " + req.getMessage() + ", Scan Result: " + processedText);
+
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
     }

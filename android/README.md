@@ -1,8 +1,7 @@
-gRPC Hello World Example (Android Java)
-========================
+# gRPC Hello World Example (Android Java)
 
-PREREQUISITES
--------------
+## PREREQUISITES
+
 - [Java gRPC](https://github.com/grpc/grpc-java)
 
 - [Android Tutorial](https://developer.android.com/training/basics/firstapp/index.html) if you're new to Android development
@@ -11,14 +10,14 @@ PREREQUISITES
 
 - We only have Android gRPC client in this example. Please follow examples in other languages to build and run a gRPC server.
 
-INSTALL
--------
+## INSTALL
 
 1. **[Install gRPC Java library SNAPSHOT locally, including code generation plugin](../../COMPILING.md) (Only need this step for non-released versions, e.g. master HEAD).**
 
 2. Install the app
+
 ```sh
-$ cd helloworld  # or "cd routeguide"
+$ cd idetect
 $ ../../gradlew installDebug
 ```
 
